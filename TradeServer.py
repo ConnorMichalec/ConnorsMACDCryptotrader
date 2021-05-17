@@ -13,17 +13,23 @@ class App():
     def __init__(self):
         self.initializeData()
 
-        margin = 0.05
-        yHigh = np.amax(self.historical_organized["close"]) + margin*np.amax(self.historical_organized["close"])
-        yLow =  np.amin(self.historical_organized["close"]) - margin*np.amin(self.historical_organized["close"])
+        margin_y = 0.05
+        margin_x = 0
+        yHigh = np.amax(self.historical_organized["close"]) + margin_y*np.amax(self.historical_organized["close"])
+        yLow =  np.amin(self.historical_organized["close"]) - margin_y*np.amin(self.historical_organized["close"])
 
-        self.plot = figure(title="MACD AUTOTRADER - 30M timeframe", plot_height=700, plot_width=1200, x_axis_label="TIME", y_axis_label="PRICE", tools="pan,reset,save", y_range=(yLow, yHigh))
+        xHigh = np.amax(self.historical_organized["openTime"]) + margin_x*np.amax(self.historical_organized["openTime"])
+        xLow =  np.amin(self.historical_organized["openTime"]) - margin_x*np.amin(self.historical_organized["openTime"])
+
+
+        self.plot = figure(title="MACD AUTOTRADER - 30M timeframe", plot_height=900, plot_width=1400, x_axis_label="TIME", y_axis_label="PRICE", tools="pan,reset,save", y_range=(yLow, yHigh), x_range=(xLow, xHigh))
         
         zoomTool = WheelZoomTool()
 
         self.plot.add_tools(zoomTool)
         self.plot.toolbar.active_scroll = zoomTool
         self.plot.toolbar.logo = None
+        
 
 
         self.initializeGraphics()
@@ -101,7 +107,7 @@ class App():
 
         #EMA lines
         self.plot.line(x="time", y="value", legend_label="EMA LONG(50)", line_width=2, line_color="blue", source=self.longEMASource)
-        self.plot.line("time", y="value", legend_label="EMA SHORT(30)", line_width=2, line_color="green", source=self.shortEMASource)
+        self.plot.line("time", y="value", legend_label="EMA SHORT(25)", line_width=2, line_color="green", source=self.shortEMASource)
 
 
         #display historical trades:

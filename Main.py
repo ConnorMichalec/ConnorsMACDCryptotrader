@@ -36,7 +36,7 @@ class PriceCalculations():
 
     @staticmethod
     def calculateShortEMA(data):
-        span = 30
+        span = 25
         #convert np to panda dataframe
         df = pd.DataFrame(data, columns = ["openTime", "open", "high", "low", "close"])
         df["ewm"] = df["close"].ewm(span=span,min_periods=0,adjust=False,ignore_na=False).mean()
@@ -255,6 +255,14 @@ def EXECUTE_POSITION(position, openTime, price, amount):
     file.close()
 
 
+    #Make the trade
+    if(position == "LONG"):
+        Binance.EXECUTE_BUY()
+
+    elif(position == "SHORT"):
+        Binance.EXECUTE_SELL()
+
+
 #runs every time server updates, check for present MA crossings and setup trades.
 #The reason we are asking for these params are to prevent having to read from disk every time we wanna know something.
 def update(historical_adjusted, longEMA, shortEMA, current_position):
@@ -273,6 +281,6 @@ if __name__ == "__main__":
 
     container = {"/":Application(FunctionHandler(app.make_document))}
 
-    server = Server(container, port=5000)
+    server = Server(container, port=5000, allow_websocket_origin=["localhost:5000","10.0.0.240:5000"])
 
     server.run_until_shutdown()
