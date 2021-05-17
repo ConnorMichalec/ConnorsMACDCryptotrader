@@ -8,7 +8,7 @@ import threading
 
 import json
 
-import Visual, Binance
+import TradeServer, Binance
 
 from bokeh.plotting import figure,show
 from bokeh.models import Scale, WheelZoomTool
@@ -16,6 +16,8 @@ from bokeh.server.server import Server
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 
+
+TRADE_VOLUME = "0.01"
 
 
 #http://matthewrocklin.com/blog/work/2017/06/28/simple-bokeh-server
@@ -34,7 +36,7 @@ class PriceCalculations():
 
     @staticmethod
     def calculateShortEMA(data):
-        span = 25
+        span = 30
         #convert np to panda dataframe
         df = pd.DataFrame(data, columns = ["openTime", "open", "high", "low", "close"])
         df["ewm"] = df["close"].ewm(span=span,min_periods=0,adjust=False,ignore_na=False).mean()
@@ -50,27 +52,59 @@ class PriceCalculations():
         crossings = []
 
         for candleIndex in range(len(data)):
-            if(candleIndex!=0):
-                #check if the short EMA is above/equal to the long ema in the current candle
-                if(shortEMA[candleIndex][1] >= longEMA[candleIndex][1]):
-                    #check if the previous candle also BELOW the long ema, if so the current candle is a crossing point
-                    if(shortEMA[candleIndex-1][1] < longEMA[candleIndex-1][1]):
-                        crossings.append([data[candleIndex][0], shortEMA[candleIndex][1], "LONG"]) #time, price, position
+            #ensure its not the first candle and its not the current candle
+            if(candleIndex!=0 and candleIndex!=len(data)-1):
 
-                #Do the opposite for bearish indicators:
-                elif(shortEMA[candleIndex][1] <= longEMA[candleIndex][1]):
-                    if(shortEMA[candleIndex-1][1] > longEMA[candleIndex-1][1]):
-                        crossings.append([data[candleIndex][0], shortEMA[candleIndex][1], "SHORT"]) #time, price, position
+                d = PriceCalculations.determineMACross(shortEMA[candleIndex][1], longEMA[candleIndex][1], shortEMA[candleIndex-1][1], longEMA[candleIndex-1][1])
+
+                if(d == "LONG"):
+                    crossings.append([data[candleIndex][0], shortEMA[candleIndex][1], "LONG"]) #time, price, position
+                elif(d == "SHORT"):
+                    crossings.append([data[candleIndex][0], shortEMA[candleIndex][1], "SHORT"]) #time, price, position
 
         return(crossings)
 
 
+    @staticmethod
+    def determineCurrentMACross(data, longEMA, shortEMA, position):
+        #determine if last candle consisted of an MA cross, this will be used to signal trades
 
-                
+        status = None
+
+        #use last candle instead of this candle to prevent fluctuations up and down causing trades
+        lastCandleIndex = len(data)-2
+
+        cross = PriceCalculations.determineMACross(shortEMA[lastCandleIndex][1], longEMA[lastCandleIndex][1], shortEMA[lastCandleIndex-1][1], longEMA[lastCandleIndex-1][1])
+
+        #we want to make sure the current crossing will not execute an order that is already in place, for example if we are in sell mode crossing downwards every time it updates would execute that same order, so this prevents repeat orders every time it updates.
+        if(cross != position):
+            status = cross
+
+        return(status)
+
+    @staticmethod
+    def determineMACross(shortEMAPrice_current, longEMAPrice_current, shortEMAPrice_previous, longEMAPrice_previous):
+        #determine if two EMAs converge at specified point, if so determine which direction they converge
+
+        status = None
+
+        #check if the short EMA is above/equal to the long ema in the current price
+        if(shortEMAPrice_current >= longEMAPrice_current):
+            #check if the previous candle also BELOW the long ema, if so the current candle is a crossing point
+            if(shortEMAPrice_previous < longEMAPrice_previous):
+                status = "LONG"
+
+        #Do the opposite for bearish indicators:
+        elif(shortEMAPrice_current <= longEMAPrice_current):
+            if(shortEMAPrice_previous > longEMAPrice_previous):
+                status = "SHORT"
+
+        return(status)
 
 
-    #@staticmethod
-    #def identifyCrossIndicator(price_1, price_2,
+
+
+        
 
 class Data():
     @staticmethod
@@ -148,8 +182,14 @@ def organizeEMA(longOrShortEMA):
     return(EMA_organized)
 
 def fetchPosition(history):
-    #get latest position
-    position = history[len(history)-1]["position"]
+    #get latest position if there is a last position, if not just return none
+
+    if(len(history) == 0):
+        position = None
+
+    else:
+        position = history[len(history)-1]["position"]
+
 
     return(position)
 
@@ -158,6 +198,7 @@ def fetchHistory():
 
     file = open("tradeData.json")
     fileData = file.read()
+    file.close()
     jsonData = json.loads(fileData)
     history = jsonData["trade_history"]
 
@@ -193,11 +234,42 @@ def fetchHistory_adjusted(history):
     return(history_adjusted)
 
 #THIS WILL EXECUTE TRADES, BE CAREFUL
-def APPLY_POSITION():
-    pass
+def EXECUTE_POSITION(position, openTime, price, amount):
+    #Write to json
+
+    current_trade = {
+        "openTime" : openTime,
+        "price" : price,
+        "amount" : amount,
+        "position" : position
+    }
+
+    file = open("tradeData.json", "r+")
+    fileData = file.read()
+    jsonData = json.loads(fileData)
+    jsonData["trade_history"].append(current_trade)
+
+    file.seek(0) #go to top of file to write over existing stuff
+
+    file.write(json.dumps(jsonData, indent=2, separators=(",",": ")))
+    file.close()
+
+
+#runs every time server updates, check for present MA crossings and setup trades.
+#The reason we are asking for these params are to prevent having to read from disk every time we wanna know something.
+def update(historical_adjusted, longEMA, shortEMA, current_position):
+    check = PriceCalculations.determineCurrentMACross(historical_adjusted, longEMA, shortEMA, current_position)
+
+    latest_candle = len(historical_adjusted)-1
+    #Trade:
+    if(check == "LONG" or check == "SHORT"):
+        EXECUTE_POSITION(check, historical_adjusted[latest_candle][0], historical_adjusted[latest_candle][1], TRADE_VOLUME) #NOTE: These prices logged are not the exact prices traded on the market, only the prices of current ETH
+
 
 if __name__ == "__main__":
-    app = Visual.App()
+    #run app
+
+    app = TradeServer.App()
 
     container = {"/":Application(FunctionHandler(app.make_document))}
 

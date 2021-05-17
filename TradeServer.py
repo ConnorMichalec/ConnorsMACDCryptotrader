@@ -52,23 +52,30 @@ class App():
         return(np.array(redData))
 
     def getLastTradeDivHTML(self):
-        lastTrade = self.tradeHistory[len(self.tradeHistory)-1]
-        html = """
-        <table style='width:100%; border: 1px solid black; font-size: 15px; padding: 10px'; border-collapse: collapse;>
-            <caption>LAST TRADE</caption>
-            <tr>
-                <th>Open time</th>
-                <th>Position</th>
-                <th>Price</th>
-                <th>Amount</th>
-            </tr>
-            <tr>
-                <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["openTime"]+"""
-                <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["position"]+"""
-                <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["price"]+"""
-                <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["amount"]+"""
-            </tr>
-        </table>"""
+        #check if there is a trade history:
+        if(len(self.tradeHistory)!=0):
+            lastTrade = self.tradeHistory[len(self.tradeHistory)-1]
+            html = """
+            <table style='width:100%; border: 1px solid black; font-size: 15px; padding: 10px'; border-collapse: collapse;>
+                <caption>LAST TRADE</caption>
+                <tr>
+                    <th>Open time</th>
+                    <th>Position</th>
+                    <th>Price</th>
+                    <th>Amount</th>
+                </tr>
+                <tr>
+                    <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["openTime"]+"""
+                    <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["position"]+"""
+                    <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["price"]+"""
+                    <td style='border: 1px solid black; font-size: 15px;'>"""+lastTrade["amount"]+"""
+                </tr>
+            </table>"""
+        
+        else:
+            html = """
+            <p style='color: yellow;'>No trade history</p>
+            """
 
         return(html)
 
@@ -94,7 +101,7 @@ class App():
 
         #EMA lines
         self.plot.line(x="time", y="value", legend_label="EMA LONG(50)", line_width=2, line_color="blue", source=self.longEMASource)
-        self.plot.line("time", y="value", legend_label="EMA SHORT(25)", line_width=2, line_color="green", source=self.shortEMASource)
+        self.plot.line("time", y="value", legend_label="EMA SHORT(30)", line_width=2, line_color="green", source=self.shortEMASource)
 
 
         #display historical trades:
@@ -102,18 +109,19 @@ class App():
         self.plot.text(x="openTime", y="price", x_offset=-25, y_offset=50, color="#000000", text="price", text_font_size="10px", source=self.historicalTradeSource)
         self.plot.text(x="openTime", y="price", x_offset=-25, y_offset=60, color="#000000", text="amount", text_font_size="10px", source=self.historicalTradeSource)
         self.plot.text(x="openTime", y="price", x_offset=-25, y_offset=70, color="#000000", text="openTime", text_font_size="10px", source=self.historicalTradeSource)
-        self.plot.plus(x="openTime", y="price", color="color", size=25, alpha=0.3, angle=0.785, source=self.historicalTradeSource)
+        self.plot.circle(x="openTime", y="price", color="color", size=6, angle=0.785, source=self.historicalTradeSource)
         self.plot.line(x="openTime", y="price",  legend_label="TRADE HISTORY", line_width=2, line_color="black", source=self.historicalTradeSource)
 
 
         #display all historical MA crossings:
-        self.plot.cross(x="openTime", y="price", color="color", size=20, line_width=4, angle=0.785, source=self.historicalMACrossSource)
+        self.plot.plus(x="openTime", y="price", color="color", size=15, alpha=0.6, angle=0.785, source=self.historicalMACrossSource)
 
 
 
 
 
         #glyphs:
+
 
         self.priceDIV = Div(text=("ETH: "+str(self.historical_organized["close"][len(self.historical_adjusted)-1])+"USDT"), style=
         {
@@ -153,6 +161,31 @@ class App():
     def updateExternalData(self):
         #display stuff outside the plot
         self.priceDIV.text = "ETH: "+str(self.historical_organized["close"][len(self.historical_adjusted)-1])+"USDT"
+        self.positionDIV.text = "POSITION: "+str(self.position)
+        
+        if(self.position == "LONG"):
+            self.positionDIV.style = {
+                "color" : "#00FF00",
+                "font-size" : "20px", 
+                "font-size" : "25px",
+                "border" : "1px solid black"
+            }
+        elif(self.position == "SHORT"):
+            self.positionDIV.style = {
+                "color" : "#FF0000",
+                "font-size" : "20px", 
+                "font-size" : "25px",
+                "border" : "1px solid black"
+            }
+        else:
+            self.positionDIV.style = {
+                "color" : "#FFFF00",
+                "font-size" : "20px", 
+                "font-size" : "25px",
+                "border" : "1px solid black"
+            }
+
+        self.lastTradeDIV.text = self.getLastTradeDivHTML()
         
 
     def initializeData(self):
@@ -169,21 +202,6 @@ class App():
         self.shortEMASource = ColumnDataSource(data=self.shortEMA_organized)
         self.historicalTradeSource = ColumnDataSource(data=self.tradeHistory_adjusted)
         self.historicalMACrossSource = ColumnDataSource(data=self.historicalMACross_organized)
-        
-
-    def PUT_POSITION(self):
-        #reverses last position
-
-        if(self.position == "SHORT"):
-            self.position = "LONG"
-            Main.APPLY_POSITION("LONG")
-
-        elif(self.position == "LONG"):
-            self.position = "SHORT"
-            Main.APPLY_POSITION("SHORT")
-
-        self.tradeHistory = Main.fetchHistory()
-        self.tradeHistory_adjusted = Main.fetchHistory_adjusted(self.tradeHistory)
 
 
     def updateSourceData(self):
@@ -195,16 +213,16 @@ class App():
         self.redCandleSource.data = Main.get_historical_organized(self.getRedCandles(self.historical_adjusted))
         self.tradeSpan.location = self.historical_organized["openTime"][len(self.historical_organized["close"])-2]
         self.historicalTradeSource.data = self.tradeHistory_adjusted
-        self.historicalMACrossSource = self.historicalMACross_organized
-
-        self.updateExternalData()
+        self.historicalMACrossSource.data = self.historicalMACross_organized
 
         
 
     def update(self):
         self.updateData()
-
         self.updateSourceData()
+        self.updateExternalData()
+        Main.update(self.historical_adjusted, self.longEMA, self.shortEMA, self.position)
+
 
     def updateData(self):
         #updates all the data
@@ -219,9 +237,7 @@ class App():
         self.position = Main.fetchPosition(self.tradeHistory)
         self.historicalMACross = Main.PriceCalculations.identifyHistoricalMACross(self.historical_adjusted, self.longEMA, self.shortEMA)
         self.historicalMACross_organized = Main.organizeHistoricalMACross(self.historicalMACross) 
-
-    def refresh(self):
-        pass
+        
 
 
 
