@@ -1,0 +1,16 @@
+{
+    "trade_history" : [
+        {
+            "openTime" : "1621122000000",
+            "price" : "4000",
+            "amount" : "0.01",
+            "position" : "SHORT"
+        },
+        {
+            "openTime" : "1621222000000",
+            "price" : "4100",
+            "amount" : "0.01",
+            "position" : "LONG"
+        }
+    ]
+}

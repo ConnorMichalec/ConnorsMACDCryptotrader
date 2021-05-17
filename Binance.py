@@ -12,6 +12,7 @@ api_secret = input("SECRET:")
 
 
 
+
 timeframe = "30m"
 
 #Binance US
