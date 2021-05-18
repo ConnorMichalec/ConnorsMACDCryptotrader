@@ -17,9 +17,6 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 
 
-TRADE_VOLUME = "0.01"
-
-
 #http://matthewrocklin.com/blog/work/2017/06/28/simple-bokeh-server
 
 class PriceCalculations():
@@ -234,13 +231,26 @@ def fetchHistory_adjusted(history):
     return(history_adjusted)
 
 #THIS WILL EXECUTE TRADES, BE CAREFUL
-def EXECUTE_POSITION(position, openTime, price, amount):
+def EXECUTE_POSITION(position, openTime, price):
+
+    volume = 0
+
+    #Make the trade
+    if(position == "LONG"):
+        volume = Binance.getBuyTradeVolume()
+        Binance.EXECUTE_BUY(volume)
+
+    elif(position == "SHORT"):
+        volume = Binance.getSellTradeVolume()
+        Binance.EXECUTE_SELL(volume)
+
+
     #Write to json
 
     current_trade = {
         "openTime" : openTime,
         "price" : price,
-        "amount" : amount,
+        "amount" : str(volume),
         "position" : position
     }
 
@@ -255,14 +265,6 @@ def EXECUTE_POSITION(position, openTime, price, amount):
     file.close()
 
 
-    #Make the trade
-    if(position == "LONG"):
-        Binance.EXECUTE_BUY()
-
-    elif(position == "SHORT"):
-        Binance.EXECUTE_SELL()
-
-
 #runs every time server updates, check for present MA crossings and setup trades.
 #The reason we are asking for these params are to prevent having to read from disk every time we wanna know something.
 def update(historical_adjusted, longEMA, shortEMA, current_position):
@@ -271,7 +273,7 @@ def update(historical_adjusted, longEMA, shortEMA, current_position):
     latest_candle = len(historical_adjusted)-1
     #Trade:
     if(check == "LONG" or check == "SHORT"):
-        EXECUTE_POSITION(check, historical_adjusted[latest_candle][0], historical_adjusted[latest_candle][1], TRADE_VOLUME) #NOTE: These prices logged are not the exact prices traded on the market, only the prices of current ETH
+        EXECUTE_POSITION(check, historical_adjusted[latest_candle][0], historical_adjusted[latest_candle][1]) #NOTE: These prices logged are not the exact prices traded on the market, only the prices of current ETH
 
 
 if __name__ == "__main__":

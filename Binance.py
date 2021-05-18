@@ -40,14 +40,11 @@ def getHistorical():
 #Currently uses 92% of the available balance to BUY order, (it will still sell off all available eth tho)
 buy_percent = 0.92
 
-def EXECUTE_SELL():
-    volume = getSellTradeVolume()
+def EXECUTE_SELL(volume):
 
     order = client.create_order(symbol="ETHUSDT", side="SELL", type="MARKET", quantity=volume)
 
-def EXECUTE_BUY():
-    volume = getBuyTradeVolume()
-    print(volume)
+def EXECUTE_BUY(volume):
     
     order = client.create_order(symbol="ETHUSDT", side="BUY", type="MARKET", quantity=volume)
 
