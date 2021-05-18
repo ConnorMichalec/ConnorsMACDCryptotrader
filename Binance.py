@@ -37,7 +37,8 @@ def getHistorical():
 
 
 #TODO: Implement a lmit system instead of using market orders, also add support to choose how much
-#Currently uses 92% of the available balance to BUY order, (it will still sell off all available eth tho)
+#Currently uses 92% of the available balance to BUY order, (it will still sell 99%(because of fees or whatver) all available eth tho)
+sell_percent = 0.99
 buy_percent = 0.92
 
 def EXECUTE_SELL(volume):
@@ -59,7 +60,7 @@ def getBuyTradeVolume():
 def getSellTradeVolume():
     #sell all eth.
     balance = float(client.get_asset_balance(asset="ETH")["free"])
-    volume = round((balance), 5) #binance does not like lots of percision so round to 5 decimal places(lot size error)
+    volume = round((balance*(sell_percent)), 5) #binance does not like lots of percision so round to 5 decimal places(lot size error)
 
     return(volume)
 
