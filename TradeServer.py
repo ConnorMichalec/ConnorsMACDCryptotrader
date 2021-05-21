@@ -206,7 +206,7 @@ class App():
         self.redCandleSource = ColumnDataSource(data=Main.get_historical_organized(self.getRedCandles(self.historical_adjusted)))
         self.longEMASource = ColumnDataSource(data=self.longEMA_organized)
         self.shortEMASource = ColumnDataSource(data=self.shortEMA_organized)
-        self.historicalTradeSource = ColumnDataSource(data=self.tradeHistory_adjusted)
+        self.historicalTradeSource = ColumnDataSource(data=self.tradeHistory_organized)
         self.historicalMACrossSource = ColumnDataSource(data=self.historicalMACross_organized)
 
 
@@ -218,7 +218,7 @@ class App():
         self.greenCandleSource.data = Main.get_historical_organized(self.getGreenCandles(self.historical_adjusted))
         self.redCandleSource.data = Main.get_historical_organized(self.getRedCandles(self.historical_adjusted))
         self.tradeSpan.location = self.historical_organized["openTime"][len(self.historical_organized["close"])-2]
-        self.historicalTradeSource.data = self.tradeHistory_adjusted
+        self.historicalTradeSource.data = self.tradeHistory_organized
         self.historicalMACrossSource.data = self.historicalMACross_organized
 
         
@@ -227,7 +227,7 @@ class App():
         self.updateData()
         self.updateSourceData()
         self.updateExternalData()
-        Main.update(self.historical_adjusted, self.longEMA, self.shortEMA, self.position)
+        Main.update(self.historical_adjusted, self.longEMA, self.shortEMA, self.tradeHistory_organized)
 
 
     def updateData(self):
@@ -239,7 +239,7 @@ class App():
         self.longEMA_organized = Main.organizeEMA(self.longEMA)
         self.shortEMA_organized = Main.organizeEMA(self.shortEMA)
         self.tradeHistory = Main.fetchHistory()
-        self.tradeHistory_adjusted = Main.fetchHistory_adjusted(self.tradeHistory)
+        self.tradeHistory_organized = Main.fetchHistory_organized(self.tradeHistory)
         self.position = Main.fetchPosition(self.tradeHistory)
         self.historicalMACross = Main.PriceCalculations.identifyHistoricalMACross(self.historical_adjusted, self.longEMA, self.shortEMA)
         self.historicalMACross_organized = Main.organizeHistoricalMACross(self.historicalMACross) 

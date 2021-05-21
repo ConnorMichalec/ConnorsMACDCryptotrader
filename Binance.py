@@ -10,7 +10,7 @@ import binance.client as client
 api_key = input("KEY:")
 api_secret = input("SECRET:")
 
-timeframe = "30m"
+timeframe = "1m"
 
 #Binance US
 #https://www.reddit.com/r/BinanceExchange/comments/dahxcq/binance_us_api_python_wrapper/

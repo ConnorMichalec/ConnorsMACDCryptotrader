@@ -22,7 +22,7 @@ from bokeh.application.handlers.function import FunctionHandler
 class PriceCalculations():
     @staticmethod
     def calculateLongEMA(data):
-        span = 50
+        span = 5
         #convert np to panda dataframe
         df = pd.DataFrame(data, columns = ["openTime", "open", "high", "low", "close"])
         df["ewm"] = df["close"].ewm(span=span,min_periods=0,adjust=False,ignore_na=False).mean()
@@ -33,7 +33,7 @@ class PriceCalculations():
 
     @staticmethod
     def calculateShortEMA(data):
-        span = 25
+        span = 2
         #convert np to panda dataframe
         df = pd.DataFrame(data, columns = ["openTime", "open", "high", "low", "close"])
         df["ewm"] = df["close"].ewm(span=span,min_periods=0,adjust=False,ignore_na=False).mean()
@@ -63,7 +63,7 @@ class PriceCalculations():
 
 
     @staticmethod
-    def determineCurrentMACross(data, longEMA, shortEMA, position):
+    def determineCurrentMACross(data, longEMA, shortEMA, tradeHistory_organized):
         #determine if last candle consisted of an MA cross, this will be used to signal trades
 
         status = None
@@ -72,9 +72,11 @@ class PriceCalculations():
         lastCandleIndex = len(data)-2
 
         cross = PriceCalculations.determineMACross(shortEMA[lastCandleIndex][1], longEMA[lastCandleIndex][1], shortEMA[lastCandleIndex-1][1], longEMA[lastCandleIndex-1][1])
-
-        #we want to make sure the current crossing will not execute an order that is already in place, for example if we are in sell mode crossing downwards every time it updates would execute that same order, so this prevents repeat orders every time it updates.
-        if(cross != position):
+        #make sure we are not doing the same trade twice.(check if last trade time is equal to this one)
+        if(len(data[0])-1>0):
+            if(data[len(data)-1][0] != tradeHistory_organized["openTime"][len(tradeHistory_organized["openTime"])-1]):
+                status = cross
+        else:
             status = cross
 
         return(status)
@@ -201,7 +203,8 @@ def fetchHistory():
 
     return(history)
 
-def fetchHistory_adjusted(history):
+def fetchHistory_organized(history):
+    #adjustment and organization in 1
     openTime_l = []
     price_l = []
     amount_l = []
@@ -267,8 +270,8 @@ def EXECUTE_POSITION(position, openTime, price):
 
 #runs every time server updates, check for present MA crossings and setup trades.
 #The reason we are asking for these params are to prevent having to read from disk every time we wanna know something.
-def update(historical_adjusted, longEMA, shortEMA, current_position):
-    check = PriceCalculations.determineCurrentMACross(historical_adjusted, longEMA, shortEMA, current_position)
+def update(historical_adjusted, longEMA, shortEMA, tradeHistory_adjusted):
+    check = PriceCalculations.determineCurrentMACross(historical_adjusted, longEMA, shortEMA, tradeHistory_adjusted)
 
     latest_candle = len(historical_adjusted)-1
     #Trade:
