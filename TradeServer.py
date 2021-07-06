@@ -106,8 +106,8 @@ class App():
         self.plot.add_layout(self.tradeSpan)
 
         #EMA lines
-        self.plot.line(x="time", y="value", legend_label="EMA LONG(50)", line_width=2, line_color="blue", source=self.longEMASource)
-        self.plot.line("time", y="value", legend_label="EMA SHORT(25)", line_width=2, line_color="green", source=self.shortEMASource)
+        self.plot.line(x="time", y="value", legend_label="EMA LONG(100)", line_width=2, line_color="blue", source=self.longEMASource)
+        self.plot.line("time", y="value", legend_label="EMA SHORT(50)", line_width=2, line_color="green", source=self.shortEMASource)
 
 
         #display historical trades:
