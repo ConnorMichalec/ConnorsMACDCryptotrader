@@ -32,7 +32,7 @@ client = client.Client(api_key, api_secret, tld="us")
 
 def getHistorical():
     #earliestPossible = client._get_earliest_valid_timestamp("ETHUSDT", timeframe)
-    historical = client.get_historical_klines("ETHUSDT", timeframe, "1 weeks ago UTC")
+    historical = client.get_historical_klines("ETHUSDT", timeframe, "2 weeks ago UTC")
     return(historical)
 
 

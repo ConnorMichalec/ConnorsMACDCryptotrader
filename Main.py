@@ -22,7 +22,7 @@ from bokeh.application.handlers.function import FunctionHandler
 class PriceCalculations():
     @staticmethod
     def calculateLongEMA(data):
-        span = 100
+        span = 150
         #convert np to panda dataframe
         df = pd.DataFrame(data, columns = ["openTime", "open", "high", "low", "close"])
         df["ewm"] = df["close"].ewm(span=span,min_periods=0,adjust=False,ignore_na=False).mean()
@@ -33,7 +33,7 @@ class PriceCalculations():
 
     @staticmethod
     def calculateShortEMA(data):
-        span = 50
+        span = 100
         #convert np to panda dataframe
         df = pd.DataFrame(data, columns = ["openTime", "open", "high", "low", "close"])
         df["ewm"] = df["close"].ewm(span=span,min_periods=0,adjust=False,ignore_na=False).mean()
