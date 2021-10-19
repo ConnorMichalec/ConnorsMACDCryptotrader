@@ -3,7 +3,7 @@ My first attempt at an auto trading software
 
 Currently uses MACD like indicators and places trades based on 100EMA crossing 150EMA on the 30 minute timeframe.
 
-In a volatile market it seems to be quite profitable(as tested so far) but I suspect in a sideways moving market it wont make much gains. However tweaking to code for a lower timeframe MIGHT work. 
+In a volatile market it seems to at least work but I suspect in a sideways moving market it wont work as well/might lose money. However tweaking to code might have an effect. 
 Keep in mind it uses quite primitive strategies so it has many weaknesses, especially because it does not take trading volume into account.
 
 
